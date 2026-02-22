@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Shirok Tech Hub</title>
+  <meta name="description" content="Qiita記事とYouTube動画をまとめた技術ポータル。" />
+
+  <!-- OGP (必要に応じて画像を追加) -->
+  <meta property="og:title" content="Shirok Tech Hub" />
+  <meta property="og:description" content="Qiita記事とYouTube動画をまとめた技術ポータル。" />
+  <meta property="og:type" content="website" />
+
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="container header">
+    <div class="brand">
+      <div class="logo">S</div>
+      <div>
+        <h1>Shirok Tech Hub</h1>
+        <p class="muted">Qiita × YouTube まとめサイト</p>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="#posts">Qiita</a>
+      <a href="#videos">YouTube</a>
+      <a href="#about">About</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div>
+        <h2>技術情報を1か所に集約</h2>
+        <p class="muted">
+          Qiitaの最新記事とYouTubeの最新動画を、このページにまとめます。
+        </p>
+
+        <div class="cta">
+          <a class="btn" href="https://qiita.com/shirok" target="_blank" rel="noopener">Qiitaを見る</a>
+          <a class="btn ghost" href="https://www.youtube.com/@shirokblog" target="_blank" rel="noopener">YouTubeを見る</a>
+        </div>
+
+        <div class="chips">
+          <span class="chip">OCI / Exadata</span>
+          <span class="chip">ネットワーク性能</span>
+          <span class="chip">DB / AI</span>
+          <span class="chip">DevOps</span>
+        </div>
+      </div>
+
+      <aside class="card">
+        <h3>更新情報</h3>
+        <ul class="stats">
+          <li><span class="k">Qiita最新</span><span id="qiita-updated" class="v muted">読み込み中…</span></li>
+          <li><span class="k">公開</span><span class="v muted">GitHub Pages等でホスティング</span></li>
+        </ul>
+        <p class="muted small">
+          ※ YouTubeの自動取得（最新動画一覧）も可能です（後述）。
+        </p>
+      </aside>
+    </section>
+
+    <section id="posts" class="section">
+      <div class="section-head">
+        <h2>最新Qiita記事</h2>
+        <div class="tools">
+          <input id="post-filter" class="input" type="search" placeholder="記事検索（タイトル/タグ）" />
+          <a class="link" href="https://qiita.com/shirok" target="_blank" rel="noopener">一覧へ →</a>
+        </div>
+      </div>
+
+      <div id="posts-grid" class="grid"></div>
+      <p id="posts-empty" class="muted small hidden">該当する記事がありません。</p>
+    </section>
+
+    <section id="videos" class="section">
+      <div class="section-head">
+        <h2>YouTube（アップロード）</h2>
+        <div class="tools">
+          <a class="link" href="https://www.youtube.com/@shirokblog" target="_blank" rel="noopener">チャンネルへ →</a>
+        </div>
+      </div>
+
+      <div class="video-wrap">
+        <!-- ↓ あなたの channel_id を入れると “アップロード動画” が表示できます -->
+        <iframe
+          id="yt-frame"
+          title="Shirok Blog Uploads"
+          width="100%"
+          height="480"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen>
+        </iframe>
+      </div>
+
+      <p class="muted small">
+        channel_id（UC...）が分からない場合：YouTubeチャンネルの「共有」や「概要」から <code>/channel/UC...</code> のURLを取得できます。
+      </p>
+    </section>
+
+    <section id="about" class="section">
+      <div class="section-head">
+        <h2>About</h2>
+      </div>
+
+      <div class="card">
+        <p>
+          技術ブログと動画で、OCI / データベース / ネットワーク性能検証などを発信しています。
+        </p>
+        <div class="links">
+          <a class="btn" href="https://qiita.com/shirok" target="_blank" rel="noopener">Qiita</a>
+          <a class="btn" href="https://www.youtube.com/@shirokblog" target="_blank" rel="noopener">YouTube</a>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span class="muted small">© <span id="year"></span> Shirok</span>
+      <span class="muted small">Built with static HTML</span>
+    </footer>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
