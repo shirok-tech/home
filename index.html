@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Shirok Tech Hub</title>
   <meta name="description" content="Qiita記事とYouTube動画をまとめた技術ポータル。" />
+  <meta name="theme-color" content="#0b1020" />
 
-  <!-- OGP (必要に応じて画像を追加) -->
+  <!-- OGP -->
   <meta property="og:title" content="Shirok Tech Hub" />
   <meta property="og:description" content="Qiita記事とYouTube動画をまとめた技術ポータル。" />
   <meta property="og:type" content="website" />
@@ -44,14 +45,13 @@
 
   <main class="container">
     <section class="hero">
-      <div>
+      <div class="hero-copy">
+        <p class="eyebrow">Performance-first Engineering Notes</p>
         <h2>SHIROK'S TECH BLOG</h2>
-<!--         <p class="muted">
-          Qiitaの最新記事とYouTubeの最新動画を、このページにまとめます。
-        </p> -->
-        <p class="muted">
-          :contentReference[oaicite:0]{index=0} の検証記事と :contentReference[oaicite:1]{index=1} の解説動画を、ひとつの技術ハブに集約。
-          速さも再現性も、ちゃんと測る派。
+        <p class="muted lead">
+          OCI / Exadata / Database / Network の検証ナレッジを、
+          記事と動画で横断できるテックポータル。<br />
+          「速さも再現性も、ちゃんと測る」をテーマに発信しています。
         </p>
 
         <div class="cta">
@@ -67,14 +67,30 @@
         </div>
       </div>
 
-      <aside class="card">
-        <h3>更新情報</h3>
+      <aside class="card status-card">
+        <h3>更新ステータス</h3>
         <ul class="stats">
           <li><span class="k">Qiita最新</span><span id="qiita-updated" class="v muted">読み込み中…</span></li>
           <li><span class="k">公開</span><span class="v muted">GitHub Pages等でホスティング</span></li>
         </ul>
+
+        <div class="quick-stats">
+          <div class="quick-stat">
+            <span id="stat-posts" class="num">--</span>
+            <span class="label">Posts</span>
+          </div>
+          <div class="quick-stat">
+            <span id="stat-likes" class="num">--</span>
+            <span class="label">Likes</span>
+          </div>
+          <div class="quick-stat">
+            <span id="stat-tags" class="num">--</span>
+            <span class="label">Tags</span>
+          </div>
+        </div>
+
         <p class="muted small">
-          ※ YouTubeの自動取得（最新動画一覧）も可能です（後述）。
+          ※ Qiita API の取得結果をもとに自動表示しています。
         </p>
       </aside>
     </section>
@@ -125,7 +141,7 @@
       </div>
 
       <p class="muted small">
-        channel_id（UC...）が分からない場合：YouTubeチャンネルの「共有」や「概要」から <code>/channel/UC...</code> のURLを取得できます。
+        channel_id（UC...）を設定すると、アップロード動画を自動表示できます。
       </p>
     </section>
 
@@ -134,10 +150,12 @@
         <h2>About</h2>
       </div>
 
-      <div class="card">
-        <p>
-          技術ブログと動画で、OCI / データベース / ネットワーク性能検証などを発信しています。
-        </p>
+      <div class="card about-card">
+        <ul class="about-list">
+          <li>OCI / Exadata / Database / Network を中心に検証・実装ノウハウを発信</li>
+          <li>記事（Qiita）と動画（YouTube）を同じ場所で追える構成</li>
+          <li>手順・計測・再現性を重視した、実務向けの技術メモ</li>
+        </ul>
         <div class="links">
           <a class="btn" href="https://qiita.com/shirok" target="_blank" rel="noopener">Qiita</a>
           <a class="btn" href="https://www.youtube.com/@shirokblog" target="_blank" rel="noopener">YouTube</a>
@@ -147,7 +165,7 @@
 
     <footer class="footer">
       <span class="muted small">© <span id="year"></span> Shirok</span>
-      <span class="muted small">Built with static HTML</span>
+      <span class="muted small">Built with static HTML / CSS / JS</span>
     </footer>
   </main>
 

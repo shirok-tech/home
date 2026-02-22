@@ -2,11 +2,17 @@ const CONFIG = {
   qiitaUser: "shirok",
   qiitaPerPage: 12,
 
-  // A案（最小運用・確実版）：channel_id を使う
   youtubeChannelId: "UCAh-qiN4BV84ov1ZLfaPCgQ",
 };
 
 const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+const state = {
+  items: [],
+  activeCategory: "all",
+  query: "",
+};
 
 function formatDateJST(iso) {
   try {
@@ -17,14 +23,7 @@ function formatDateJST(iso) {
   }
 }
 
-function uploadsPlaylistIdFromChannelId(channelId) {
-  // UCxxxx -> UUxxxx（アップロード用プレイリスト）
-  if (!channelId || !channelId.startsWith("UC")) return null;
-  return "UU" + channelId.slice(2);
-}
-
 async function fetchQiitaItems() {
-  // Qiita API v2：ユーザーの記事一覧を新しい順で取得できます :contentReference[oaicite:2]{index=2}
   const url = `https://qiita.com/api/v2/users/${encodeURIComponent(CONFIG.qiitaUser)}/items?page=1&per_page=${CONFIG.qiitaPerPage}`;
   const res = await fetch(url, { headers: { "Accept": "application/json" } });
   if (!res.ok) throw new Error(`Qiita fetch failed: ${res.status}`);
@@ -51,9 +50,6 @@ function renderQiita(items) {
   const grid = $("#posts-grid");
   grid.innerHTML = "";
 
-  // 付与：各記事にカテゴリをつける
-  items.forEach(it => { it.__cat = classifyCategory(it); });
-
   items.forEach((it) => {
     const el = document.createElement("article");
     el.className = "post";
@@ -74,65 +70,56 @@ function renderQiita(items) {
     grid.appendChild(el);
   });
 
-  // 更新日時表示
-  if (items[0]?.created_at) {
-    $("#qiita-updated").textContent = formatDateJST(items[0].created_at);
+  const latest = state.items[0] || items[0];
+  if (latest?.created_at) {
+    $("#qiita-updated").textContent = formatDateJST(latest.created_at);
   } else {
     $("#qiita-updated").textContent = "—";
   }
+}
 
-  // 検索フィルタ
-  const all = items.map(it => ({
-    raw: it,
-    text: `${(it.title||"").toLowerCase()} ${(it.tags||[]).map(t=>t.name.toLowerCase()).join(" ")}`
-  }));
+function applyFilters() {
+  const q = state.query;
+  const cat = state.activeCategory;
 
-  $("#post-filter").addEventListener("input", (e) => {
-    const q = (e.target.value || "").trim().toLowerCase();
-    const filtered = q ? all.filter(x => x.text.includes(q)).map(x => x.raw) : items;
+  const filtered = state.items.filter((it) => {
+    const inCategory = cat === "all" ? true : it.__cat === cat;
+    if (!inCategory) return false;
+    if (!q) return true;
+    return it.__searchText.includes(q);
+  });
 
-    $("#posts-empty").classList.toggle("hidden", filtered.length !== 0);
-    renderQiita(filtered);
-  }, { once: true });
-  
-  function applyCategoryFilter(items, cat){
-    if (!cat || cat === "all") return items;
-    return items.filter(it => it.__cat === cat);
+  $("#posts-empty").classList.toggle("hidden", filtered.length !== 0);
+  renderQiita(filtered);
+}
+
+function updateQuickStats(items) {
+  const postCount = items.length;
+  const likes = items.reduce((sum, it) => sum + Number(it.likes_count ?? 0), 0);
+  const tagSet = new Set(items.flatMap((it) => (it.tags || []).map((t) => (t.name || "").toLowerCase())));
+
+  $("#stat-posts").textContent = String(postCount);
+  $("#stat-likes").textContent = String(likes);
+  $("#stat-tags").textContent = String(tagSet.size);
+}
+
+function initFilters() {
+  const filterInput = $("#post-filter");
+  if (filterInput) {
+    filterInput.addEventListener("input", (e) => {
+      state.query = (e.target.value || "").trim().toLowerCase();
+      applyFilters();
+    });
   }
 
-  // カテゴリボタン
-  document.querySelectorAll(".cat").forEach(btn => {
+  $$(".cat").forEach(btn => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll(".cat").forEach(b => b.classList.remove("active"));
+      $$(".cat").forEach(b => b.classList.remove("active"));
       btn.classList.add("active");
-
-      const cat = btn.dataset.cat;
-      const q = ($("#post-filter")?.value || "").trim().toLowerCase();
-
-      // まずカテゴリで絞り、次に検索をかける
-      let filtered = applyCategoryFilter(items, cat);
-
-      if (q){
-        filtered = filtered.filter(it => {
-          const text = `${(it.title||"").toLowerCase()} ${(it.tags||[]).map(t=>t.name.toLowerCase()).join(" ")}`;
-          return text.includes(q);
-        });
-      }
-
-      $("#posts-empty").classList.toggle("hidden", filtered.length !== 0);
-      renderQiita(filtered);
+      state.activeCategory = btn.dataset.cat || "all";
+      applyFilters();
     });
   });
-}
-
-function uploadsPlaylistIdFromChannelId(channelId) {
-  if (!channelId || !channelId.startsWith("UC")) return null;
-  return "UU" + channelId.slice(2);
-}
-
-function uploadsPlaylistIdFromChannelId(channelId) {
-  if (!channelId || !channelId.startsWith("UC")) return null;
-  return "UU" + channelId.slice(2);
 }
 
 function uploadsPlaylistIdFromChannelId(channelId) {
@@ -143,7 +130,6 @@ function uploadsPlaylistIdFromChannelId(channelId) {
 function setYouTubeEmbed() {
   const frame = document.querySelector("#yt-frame");
 
-  // ★重要：file:// 直開きは Error 153 になりやすい
   if (location.protocol === "file:") {
     frame.srcdoc = `
       <style>body{margin:0;display:grid;place-items:center;background:#000;color:#fff;font-family:system-ui}</style>
@@ -162,7 +148,6 @@ function setYouTubeEmbed() {
   const uploads = uploadsPlaylistIdFromChannelId((CONFIG.youtubeChannelId || "").trim());
   if (!uploads) return;
 
-  // ★安定しやすい：nocookie + origin付与（http(s)のときだけ）
   const originParam = location.origin.startsWith("http")
     ? `&origin=${encodeURIComponent(location.origin)}`
     : "";
@@ -182,10 +167,23 @@ function escapeHtml(s) {
 (async function main() {
   $("#year").textContent = String(new Date().getFullYear());
   setYouTubeEmbed();
+  initFilters();
 
   try {
     const items = await fetchQiitaItems();
-    renderQiita(items);
+
+    state.items = items.map((it) => {
+      const title = (it.title || "").toLowerCase();
+      const tags = (it.tags || []).map((t) => (t.name || "").toLowerCase());
+      return {
+        ...it,
+        __cat: classifyCategory(it),
+        __searchText: `${title} ${tags.join(" ")}`,
+      };
+    });
+
+    updateQuickStats(state.items);
+    applyFilters();
   } catch (e) {
     console.error(e);
     $("#qiita-updated").textContent = "取得失敗";
