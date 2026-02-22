@@ -2,9 +2,8 @@ const CONFIG = {
   qiitaUser: "shirok",
   qiitaPerPage: 12,
 
-  // YouTubeの channel_id（UC...）を入れると、アップロード動画が表示されます
-  // 例: UCxxxxxxxxxxxxxxxxxxxxxx
-  youtubeChannelId: "PUT_YOUR_CHANNEL_ID_HERE",
+  // A案（最小運用・確実版）：channel_id を使う
+  youtubeChannelId: "UCAh-qiN4BV84ov1ZLfaPCgQ",
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -78,26 +77,34 @@ function renderQiita(items) {
   }, { once: true });
 }
 
-function setYouTubeEmbed() {
-  const channelId = CONFIG.youtubeChannelId.trim();
-  const uploads = uploadsPlaylistIdFromChannelId(channelId);
+function uploadsPlaylistIdFromChannelId(channelId) {
+  if (!channelId || !channelId.startsWith("UC")) return null;
+  return "UU" + channelId.slice(2);
+}
 
-  const frame = $("#yt-frame");
+function uploadsPlaylistIdFromChannelId(channelId) {
+  if (!channelId || !channelId.startsWith("UC")) return null;
+  return "UU" + channelId.slice(2);
+}
+
+function setYouTubeEmbed() {
+  const frame = document.querySelector("#yt-frame");
+  const uploads = uploadsPlaylistIdFromChannelId((CONFIG.youtubeChannelId || "").trim());
+
   if (!uploads) {
-    // channel_id未設定でもUI崩れないように
     frame.srcdoc = `
       <style>body{margin:0;display:grid;place-items:center;background:#000;color:#fff;font-family:system-ui}</style>
       <div style="padding:20px;text-align:center">
         <div style="font-weight:700;margin-bottom:8px">YouTube 埋め込みの設定が必要です</div>
         <div style="opacity:.8;font-size:13px;line-height:1.6">
-          app.js の <code>youtubeChannelId</code> に<br/>UC... 形式の channel_id を入れてください。
+          app.js の <code>youtubeChannelId</code> に <code>UC...</code> を入れてください。
         </div>
       </div>
     `;
     return;
   }
 
-  // アップロード動画プレイリストを埋め込み
+  // アップロード動画プレイリストを埋め込み（最小運用の王道）
   frame.src = `https://www.youtube.com/embed/videoseries?list=${encodeURIComponent(uploads)}`;
 }
 
