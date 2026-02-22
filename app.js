@@ -87,25 +87,39 @@ function uploadsPlaylistIdFromChannelId(channelId) {
   return "UU" + channelId.slice(2);
 }
 
+function uploadsPlaylistIdFromChannelId(channelId) {
+  if (!channelId || !channelId.startsWith("UC")) return null;
+  return "UU" + channelId.slice(2);
+}
+
 function setYouTubeEmbed() {
   const frame = document.querySelector("#yt-frame");
-  const uploads = uploadsPlaylistIdFromChannelId((CONFIG.youtubeChannelId || "").trim());
 
-  if (!uploads) {
+  // ★重要：file:// 直開きは Error 153 になりやすい
+  if (location.protocol === "file:") {
     frame.srcdoc = `
       <style>body{margin:0;display:grid;place-items:center;background:#000;color:#fff;font-family:system-ui}</style>
-      <div style="padding:20px;text-align:center">
-        <div style="font-weight:700;margin-bottom:8px">YouTube 埋め込みの設定が必要です</div>
-        <div style="opacity:.8;font-size:13px;line-height:1.6">
-          app.js の <code>youtubeChannelId</code> に <code>UC...</code> を入れてください。
+      <div style="padding:20px;text-align:center;max-width:520px">
+        <div style="font-weight:800;margin-bottom:10px">YouTube埋め込みは file:// 直開きだとブロックされることがあります（Error 153）</div>
+        <div style="opacity:.85;font-size:13px;line-height:1.7">
+          対処：このフォルダで <code>python3 -m http.server 8000</code> を実行して<br/>
+          <code>http://localhost:8000</code> から開いてください。<br/>
+          もしくはGitHub Pages等にデプロイすると確実です。
         </div>
       </div>
     `;
     return;
   }
 
-  // アップロード動画プレイリストを埋め込み（最小運用の王道）
-  frame.src = `https://www.youtube.com/embed/videoseries?list=${encodeURIComponent(uploads)}`;
+  const uploads = uploadsPlaylistIdFromChannelId((CONFIG.youtubeChannelId || "").trim());
+  if (!uploads) return;
+
+  // ★安定しやすい：nocookie + origin付与（http(s)のときだけ）
+  const originParam = location.origin.startsWith("http")
+    ? `&origin=${encodeURIComponent(location.origin)}`
+    : "";
+
+  frame.src = `https://www.youtube-nocookie.com/embed/videoseries?list=${encodeURIComponent(uploads)}${originParam}`;
 }
 
 function escapeHtml(s) {
