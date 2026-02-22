@@ -31,9 +31,28 @@ async function fetchQiitaItems() {
   return await res.json();
 }
 
+function classifyCategory(item){
+  const title = (item.title || "").toLowerCase();
+  const tags = (item.tags || []).map(t => (t.name || "").toLowerCase());
+  const hay = [title, ...tags].join(" ");
+
+  // Shirokっぽいキーワードで自動分類（必要なら増やせます）
+  if (/(oci|exadata|exa(cs)?|adb|autonomous|oracle cloud|oci )/.test(hay)) return "oci";
+  if (/(oracle database|database|sql|pl\/sql|odb|autonomous database)/.test(hay)) return "db";
+  if (/(iperf|netperf|rtt|latency|throughput|tcp|udp|network|帯域|遅延)/.test(hay)) return "net";
+  if (/(wsl|windows|podman|wsl1|wsl2)/.test(hay)) return "wsl";
+  if (/(rag|vector|embedding|ai|llm|lakehouse)/.test(hay)) return "ai";
+  if (/(bash|script|tool|benchmark|python|automation|ci|cd)/.test(hay)) return "tools";
+
+  return "all";
+}
+
 function renderQiita(items) {
   const grid = $("#posts-grid");
   grid.innerHTML = "";
+
+  // 付与：各記事にカテゴリをつける
+  items.forEach(it => { it.__cat = classifyCategory(it); });
 
   items.forEach((it) => {
     const el = document.createElement("article");
@@ -75,6 +94,35 @@ function renderQiita(items) {
     $("#posts-empty").classList.toggle("hidden", filtered.length !== 0);
     renderQiita(filtered);
   }, { once: true });
+  
+  function applyCategoryFilter(items, cat){
+    if (!cat || cat === "all") return items;
+    return items.filter(it => it.__cat === cat);
+  }
+
+  // カテゴリボタン
+  document.querySelectorAll(".cat").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".cat").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      const cat = btn.dataset.cat;
+      const q = ($("#post-filter")?.value || "").trim().toLowerCase();
+
+      // まずカテゴリで絞り、次に検索をかける
+      let filtered = applyCategoryFilter(items, cat);
+
+      if (q){
+        filtered = filtered.filter(it => {
+          const text = `${(it.title||"").toLowerCase()} ${(it.tags||[]).map(t=>t.name.toLowerCase()).join(" ")}`;
+          return text.includes(q);
+        });
+      }
+
+      $("#posts-empty").classList.toggle("hidden", filtered.length !== 0);
+      renderQiita(filtered);
+    });
+  });
 }
 
 function uploadsPlaylistIdFromChannelId(channelId) {

@@ -16,7 +16,19 @@
 <body>
   <header class="container header">
     <div class="brand">
-      <div class="logo">S</div>
+      <div class="logo" aria-label="Shirok logo">
+        <svg viewBox="0 0 64 64" role="img" aria-hidden="true">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="var(--accent)"/>
+              <stop offset="1" stop-color="var(--accent2)"/>
+            </linearGradient>
+          </defs>
+          <rect x="6" y="6" width="52" height="52" rx="14" fill="url(#g)"/>
+          <path d="M43 22c-2.6-4-7.6-6-13-6-8 0-14 4-14 10 0 5 4 7 11 8l5 1c4 .8 5 1.6 5 3.2 0 2.2-2.6 3.8-7 3.8-4.2 0-7.4-1.4-9.4-4.2l-5.2 3.2C18.8 50.2 24.2 54 31 54c9 0 15.6-4.6 15.6-11.2 0-5.6-4-8.2-11.6-9.6l-5.2-1c-3.4-.6-4.4-1.4-4.4-3 0-2 2.2-3.4 6-3.4 3.6 0 6.4 1.2 8 3.6z"
+                fill="rgba(11,13,18,.9)"/>
+        </svg>
+      </div>
       <div>
         <h1>Shirok Tech Hub</h1>
         <p class="muted">Qiita × YouTube まとめサイト</p>
@@ -34,8 +46,12 @@
     <section class="hero">
       <div>
         <h2>SHIROK'S TECH BLOG</h2>
-        <p class="muted">
+<!--         <p class="muted">
           Qiitaの最新記事とYouTubeの最新動画を、このページにまとめます。
+        </p> -->
+        <p class="muted">
+          :contentReference[oaicite:0]{index=0} の検証記事と :contentReference[oaicite:1]{index=1} の解説動画を、ひとつの技術ハブに集約。
+          速さも再現性も、ちゃんと測る派。
         </p>
 
         <div class="cta">
@@ -70,6 +86,16 @@
           <input id="post-filter" class="input" type="search" placeholder="記事検索（タイトル/タグ）" />
           <a class="link" href="https://qiita.com/shirok" target="_blank" rel="noopener">一覧へ →</a>
         </div>
+      </div>
+
+      <div class="category-bar">
+        <button class="cat active" data-cat="all">All</button>
+        <button class="cat" data-cat="oci">OCI / Exadata</button>
+        <button class="cat" data-cat="db">Database</button>
+        <button class="cat" data-cat="net">Network</button>
+        <button class="cat" data-cat="wsl">Windows / WSL</button>
+        <button class="cat" data-cat="ai">AI / RAG</button>
+        <button class="cat" data-cat="tools">Tools</button>
       </div>
 
       <div id="posts-grid" class="grid"></div>
