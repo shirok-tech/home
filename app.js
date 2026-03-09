@@ -1,9 +1,11 @@
 const CONFIG = {
   qiitaUser: "shirok",
   qiitaPerPage: 12,
-
   youtubeChannelId: "UCAh-qiN4BV84ov1ZLfaPCgQ",
 };
+
+const RAG_ENDPOINT = "https://ma27s6tvglwhdaarmn6wp3zu6i.apigateway.us-chicago-1.oci.customer-oci.com/rag/search";
+const ASK_ENDPOINT = "https://ma27s6tvglwhdaarmn6wp3zu6i.apigateway.us-chicago-1.oci.customer-oci.com/rag/ask";
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -17,7 +19,12 @@ const state = {
 function formatDateJST(iso) {
   try {
     const d = new Date(iso);
-    return new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", year:"numeric", month:"2-digit", day:"2-digit" }).format(d);
+    return new Intl.DateTimeFormat("ja-JP", {
+      timeZone: "Asia/Tokyo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).format(d);
   } catch {
     return iso;
   }
@@ -25,17 +32,16 @@ function formatDateJST(iso) {
 
 async function fetchQiitaItems() {
   const url = `https://qiita.com/api/v2/users/${encodeURIComponent(CONFIG.qiitaUser)}/items?page=1&per_page=${CONFIG.qiitaPerPage}`;
-  const res = await fetch(url, { headers: { "Accept": "application/json" } });
+  const res = await fetch(url, { headers: { Accept: "application/json" } });
   if (!res.ok) throw new Error(`Qiita fetch failed: ${res.status}`);
   return await res.json();
 }
 
-function classifyCategory(item){
+function classifyCategory(item) {
   const title = (item.title || "").toLowerCase();
-  const tags = (item.tags || []).map(t => (t.name || "").toLowerCase());
+  const tags = (item.tags || []).map((t) => (t.name || "").toLowerCase());
   const hay = [title, ...tags].join(" ");
 
-  // Shirokっぽいキーワードで自動分類（必要なら増やせます）
   if (/(oci|exadata|exa(cs)?|adb|autonomous|oracle cloud|oci )/.test(hay)) return "oci";
   if (/(oracle database|database|sql|pl\/sql|odb|autonomous database)/.test(hay)) return "db";
   if (/(iperf|netperf|rtt|latency|throughput|tcp|udp|network|帯域|遅延)/.test(hay)) return "net";
@@ -48,13 +54,18 @@ function classifyCategory(item){
 
 function renderQiita(items) {
   const grid = $("#posts-grid");
+  if (!grid) return;
+
   grid.innerHTML = "";
 
   items.forEach((it) => {
     const el = document.createElement("article");
     el.className = "post";
 
-    const tags = (it.tags || []).slice(0, 6).map(t => `<span class="tag">${escapeHtml(t.name)}</span>`).join("");
+    const tags = (it.tags || [])
+      .slice(0, 6)
+      .map((t) => `<span class="tag">${escapeHtml(t.name)}</span>`)
+      .join("");
 
     el.innerHTML = `
       <a href="${it.url}" target="_blank" rel="noopener">
@@ -71,10 +82,13 @@ function renderQiita(items) {
   });
 
   const latest = state.items[0] || items[0];
-  if (latest?.created_at) {
-    $("#qiita-updated").textContent = formatDateJST(latest.created_at);
-  } else {
-    $("#qiita-updated").textContent = "—";
+  const updatedEl = $("#qiita-updated");
+  if (updatedEl) {
+    if (latest?.created_at) {
+      updatedEl.textContent = formatDateJST(latest.created_at);
+    } else {
+      updatedEl.textContent = "—";
+    }
   }
 }
 
@@ -89,18 +103,26 @@ function applyFilters() {
     return it.__searchText.includes(q);
   });
 
-  $("#posts-empty").classList.toggle("hidden", filtered.length !== 0);
+  const emptyEl = $("#posts-empty");
+  if (emptyEl) emptyEl.classList.toggle("hidden", filtered.length !== 0);
+
   renderQiita(filtered);
 }
 
 function updateQuickStats(items) {
   const postCount = items.length;
   const likes = items.reduce((sum, it) => sum + Number(it.likes_count ?? 0), 0);
-  const tagSet = new Set(items.flatMap((it) => (it.tags || []).map((t) => (t.name || "").toLowerCase())));
+  const tagSet = new Set(
+    items.flatMap((it) => (it.tags || []).map((t) => (t.name || "").toLowerCase()))
+  );
 
-  $("#stat-posts").textContent = String(postCount);
-  $("#stat-likes").textContent = String(likes);
-  $("#stat-tags").textContent = String(tagSet.size);
+  const postsEl = $("#stat-posts");
+  const likesEl = $("#stat-likes");
+  const tagsEl = $("#stat-tags");
+
+  if (postsEl) postsEl.textContent = String(postCount);
+  if (likesEl) likesEl.textContent = String(likes);
+  if (tagsEl) tagsEl.textContent = String(tagSet.size);
 }
 
 function initFilters() {
@@ -112,9 +134,9 @@ function initFilters() {
     });
   }
 
-  $$(".cat").forEach(btn => {
+  $$(".cat").forEach((btn) => {
     btn.addEventListener("click", () => {
-      $$(".cat").forEach(b => b.classList.remove("active"));
+      $$(".cat").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       state.activeCategory = btn.dataset.cat || "all";
       applyFilters();
@@ -128,7 +150,8 @@ function uploadsPlaylistIdFromChannelId(channelId) {
 }
 
 function setYouTubeEmbed() {
-  const frame = document.querySelector("#yt-frame");
+  const frame = $("#yt-frame");
+  if (!frame) return;
 
   if (location.protocol === "file:") {
     frame.srcdoc = `
@@ -164,40 +187,62 @@ function escapeHtml(s) {
     .replaceAll("'", "&#039;");
 }
 
-(async function main() {
-  $("#year").textContent = String(new Date().getFullYear());
-  setYouTubeEmbed();
-  initFilters();
+async function ragSearch() {
+  const qEl = $("#ragQuery");
+  const statusEl = $("#ragStatus");
+  const out = $("#ragResults");
+
+  if (!qEl || !statusEl || !out) return;
+
+  const q = (qEl.value || "").trim();
+  if (!q) return;
+
+  statusEl.textContent = "Searching...";
+  out.innerHTML = "";
 
   try {
-    const items = await fetchQiitaItems();
-
-    state.items = items.map((it) => {
-      const title = (it.title || "").toLowerCase();
-      const tags = (it.tags || []).map((t) => (t.name || "").toLowerCase());
-      return {
-        ...it,
-        __cat: classifyCategory(it),
-        __searchText: `${title} ${tags.join(" ")}`,
-      };
+    const res = await fetch(RAG_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ q, top: 8 })
     });
 
-    updateQuickStats(state.items);
-    applyFilters();
+    const data = await res.json();
+
+    if (!res.ok) {
+      statusEl.textContent = `Error: HTTP ${res.status}`;
+      out.innerHTML = `<div class="card muted">RAG検索に失敗しました：${escapeHtml(JSON.stringify(data))}</div>`;
+      return;
+    }
+
+    const results = data.results || [];
+    statusEl.textContent = `Hits: ${results.length}`;
+
+    results.forEach((r) => {
+      const el = document.createElement("article");
+      el.className = "post";
+      el.innerHTML = `
+        <a href="${r.url}" target="_blank" rel="noopener">
+          <h3>${escapeHtml(r.title || "(no title)")}</h3>
+          <div class="meta">
+            <span>📌 dist ${escapeHtml(String(r.dist))}</span>
+          </div>
+          <div class="muted small" style="margin-top:6px">${escapeHtml(r.snippet || "")}</div>
+        </a>
+      `;
+      out.appendChild(el);
+    });
   } catch (e) {
     console.error(e);
-    $("#qiita-updated").textContent = "取得失敗";
-    $("#posts-grid").innerHTML = `<div class="card muted">Qiita記事の取得に失敗しました。時間をおいて再読み込みしてください。</div>`;
+    statusEl.textContent = "Network error";
+    out.innerHTML = `<div class="card muted">Network error: ${escapeHtml(String(e))}</div>`;
   }
-})();
+}
 
-
-const ASK_ENDPOINT = "https://ma27s6tvglwhdaarmn6wp3zu6i.apigateway.us-chicago-1.oci.customer-oci.com/rag/ask";
-
-async function askAi(){
-  const qEl = document.getElementById("askQuery");
-  const statusEl = document.getElementById("askStatus");
-  const out = document.getElementById("askAnswer");
+async function askAi() {
+  const qEl = $("#askQuery");
+  const statusEl = $("#askStatus");
+  const out = $("#askAnswer");
 
   if (!qEl || !statusEl || !out) return;
 
@@ -210,7 +255,7 @@ async function askAi(){
   try {
     const res = await fetch(ASK_ENDPOINT, {
       method: "POST",
-      headers: {"Content-Type":"application/json"},
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ question, top: 5 })
     });
 
@@ -222,26 +267,73 @@ async function askAi(){
       return;
     }
 
-    const cites = (data.citations || []).map(c =>
-      `<li><a href="${c.url}" target="_blank" rel="noopener">${escapeHtml(c.title || c.url)}</a></li>`
+    const cites = (data.citations || []).map(
+      (c) =>
+        `<li><a href="${c.url}" target="_blank" rel="noopener">${escapeHtml(c.title || c.url)}</a></li>`
     ).join("");
 
-    statusEl.textContent = "Done";
     out.innerHTML = `
       <div style="font-weight:700; margin-bottom:8px;">回答</div>
       <div style="white-space:pre-wrap; line-height:1.7;">${escapeHtml(data.answer || "")}</div>
       <div style="margin-top:12px; font-weight:700;">参考元</div>
       <ul>${cites}</ul>
     `;
+
+    statusEl.textContent = "Done";
   } catch (e) {
+    console.error(e);
     statusEl.textContent = "Network error";
     out.innerHTML = `<pre>${escapeHtml(String(e))}</pre>`;
   }
 }
 
-const askBtnEl = document.getElementById("askBtn");
-const askQueryEl = document.getElementById("askQuery");
-if (askBtnEl) askBtnEl.addEventListener("click", askAi);
-if (askQueryEl) askQueryEl.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") askAi();
-});
+(async function main() {
+  const yearEl = $("#year");
+  if (yearEl) yearEl.textContent = String(new Date().getFullYear());
+
+  setYouTubeEmbed();
+  initFilters();
+
+  const ragBtnEl = $("#ragBtn");
+  const ragQueryEl = $("#ragQuery");
+  if (ragBtnEl) ragBtnEl.addEventListener("click", ragSearch);
+  if (ragQueryEl) {
+    ragQueryEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") ragSearch();
+    });
+  }
+
+  const askBtnEl = $("#askBtn");
+  const askQueryEl = $("#askQuery");
+  if (askBtnEl) askBtnEl.addEventListener("click", askAi);
+  if (askQueryEl) {
+    askQueryEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") askAi();
+    });
+  }
+
+  try {
+    const items = await fetchQiitaItems();
+
+    state.items = items.map((it) => {
+      const title = (it.title || "").toLowerCase();
+      const tags = (it.tags || []).map((t) => (t.name || "").toLowerCase());
+      return {
+        ...it,
+        __cat: classifyCategory(it),
+        __searchText: `${title} ${tags.join(" ")}`
+      };
+    });
+
+    updateQuickStats(state.items);
+    applyFilters();
+  } catch (e) {
+    console.error(e);
+    const updatedEl = $("#qiita-updated");
+    const gridEl = $("#posts-grid");
+    if (updatedEl) updatedEl.textContent = "取得失敗";
+    if (gridEl) {
+      gridEl.innerHTML = `<div class="card muted">Qiita記事の取得に失敗しました。時間をおいて再読み込みしてください。</div>`;
+    }
+  }
+})();

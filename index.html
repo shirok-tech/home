@@ -12,7 +12,7 @@
   <meta property="og:description" content="Qiita記事とYouTube動画をまとめた技術ポータル。" />
   <meta property="og:type" content="website" />
 
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="/styles.css?v=20260309b" />
 </head>
 <body>
   <header class="container header">
@@ -104,7 +104,16 @@
         </div>
       </div>
 
+      <!-- RAG Search -->
       <div class="tools" style="margin-top:10px;">
+        <input id="ragQuery" class="input" type="search" placeholder="RAG検索（例: Oracle AI Database 26ai の特徴）" />
+        <button id="ragBtn" class="btn" type="button">RAG Search</button>
+      </div>
+      <div id="ragStatus" class="muted small" style="margin-top:6px;"></div>
+      <div id="ragResults" class="grid" style="margin-top:10px;"></div>
+
+      <!-- Ask AI -->
+      <div class="tools" style="margin-top:14px;">
         <input id="askQuery" class="input" type="search" placeholder="AIに質問（例: Oracle AI Database 26ai の特徴は？）" />
         <button id="askBtn" class="btn" type="button">Ask AI</button>
       </div>
@@ -134,7 +143,6 @@
       </div>
 
       <div class="video-wrap">
-        <!-- ↓ あなたの channel_id を入れると “アップロード動画” が表示できます -->
         <iframe
           id="yt-frame"
           title="Shirok Blog Uploads"
@@ -176,6 +184,6 @@
     </footer>
   </main>
 
-  <script src="./app.js"></script>
+  <script src="/app.js?v=20260309b" defer></script>
 </body>
 </html>
