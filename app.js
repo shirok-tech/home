@@ -169,6 +169,69 @@ function escapeHtml(s) {
   setYouTubeEmbed();
   initFilters();
 
+  // ===== RAG Search (OCI API Gateway) =====
+  // 注意: blog.shirok.net から呼ぶなら、API Gateway の CORS Allowed Origins に
+  //       https://blog.shirok.net を追加してください（GitHub Pagesのoriginだけだと弾かれます）
+  const RAG_ENDPOINT = "https://ma27s6tvglwhdaarmn6wp3zu6i.apigateway.us-chicago-1.oci.customer-oci.com/rag/search";
+
+  const ragQueryEl = $("#ragQuery");
+  const ragBtnEl = $("#ragBtn");
+  const ragStatusEl = $("#ragStatus");
+  const ragResultsEl = $("#ragResults");
+
+  async function ragSearch() {
+    if (!ragQueryEl || !ragStatusEl || !ragResultsEl) return;
+
+    const q = (ragQueryEl.value || "").trim();
+    if (!q) return;
+
+    ragStatusEl.textContent = "Searching...";
+    ragResultsEl.innerHTML = "";
+
+    try {
+      const res = await fetch(RAG_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ q, top: 8 }),
+      });
+
+      if (!res.ok) {
+        const t = await res.text();
+        ragStatusEl.textContent = `Error: HTTP ${res.status}`;
+        ragResultsEl.innerHTML = `<div class="card muted">RAG検索に失敗しました：${escapeHtml(t)}</div>`;
+        return;
+      }
+
+      const data = await res.json();
+      const results = data.results || [];
+
+      ragStatusEl.textContent = `Hits: ${results.length}`;
+
+      results.forEach((r) => {
+        const el = document.createElement("article");
+        el.className = "post";
+        el.innerHTML = `
+          <a href="${r.url}" target="_blank" rel="noopener">
+            <h3>${escapeHtml(r.title || "(no title)")}</h3>
+            <div class="meta">
+              <span>📌 dist ${escapeHtml(String(r.dist))}</span>
+            </div>
+            <div class="muted small" style="margin-top:6px">${escapeHtml(r.snippet || "")}</div>
+          </a>
+        `;
+        ragResultsEl.appendChild(el);
+      });
+    } catch (e) {
+      console.error(e);
+      if (ragStatusEl) ragStatusEl.textContent = "Network error";
+      if (ragResultsEl) ragResultsEl.innerHTML = `<div class="card muted">Network error: ${escapeHtml(String(e))}</div>`;
+    }
+  }
+
+  if (ragBtnEl) ragBtnEl.addEventListener("click", ragSearch);
+  if (ragQueryEl) ragQueryEl.addEventListener("keydown", (e) => { if (e.key === "Enter") ragSearch(); });
+  // ===== /RAG Search =====
+
   try {
     const items = await fetchQiitaItems();
 

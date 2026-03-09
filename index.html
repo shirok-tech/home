@@ -104,6 +104,14 @@
         </div>
       </div>
 
+      <!-- RAG検索（OCI /rag/search） -->
+      <div class="tools" style="margin-top:10px;">
+        <input id="ragQuery" class="input" type="search" placeholder="RAG検索（例: Oracle AI Database 26ai の特徴）" />
+        <button id="ragBtn" class="btn" type="button">RAG Search</button>
+      </div>
+      <div id="ragStatus" class="muted small" style="margin-top:6px;"></div>
+      <div id="ragResults" class="grid" style="margin-top:10px;"></div>
+
       <div class="category-bar">
         <button class="cat active" data-cat="all">All</button>
         <button class="cat" data-cat="oci">OCI / Exadata</button>
