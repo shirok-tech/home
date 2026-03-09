@@ -218,16 +218,17 @@ async function ragSearch() {
     const results = data.results || [];
     statusEl.textContent = `Hits: ${results.length}`;
 
-    results.forEach((r) => {
+    results.forEach((r, i) => {
       const el = document.createElement("article");
       el.className = "post";
       el.innerHTML = `
         <a href="${r.url}" target="_blank" rel="noopener">
           <h3>${escapeHtml(r.title || "(no title)")}</h3>
           <div class="meta">
-            <span>📌 dist ${escapeHtml(String(r.dist))}</span>
+            <span>📌 関連度 ${escapeHtml(String(r.dist))}</span>
+            <span>#${i + 1}</span>
           </div>
-          <div class="muted small" style="margin-top:6px">${escapeHtml(r.snippet || "")}</div>
+          <div class="muted small" style="margin-top:6px; line-height:1.7;">${escapeHtml(r.snippet || "")}</div>
         </a>
       `;
       out.appendChild(el);
@@ -240,9 +241,9 @@ async function ragSearch() {
 }
 
 async function askAi() {
-  const qEl = $("#askQuery");
-  const statusEl = $("#askStatus");
-  const out = $("#askAnswer");
+  const qEl = document.getElementById("askQuery");
+  const statusEl = document.getElementById("askStatus");
+  const out = document.getElementById("askAnswer");
 
   if (!qEl || !statusEl || !out) return;
 
@@ -250,7 +251,12 @@ async function askAi() {
   if (!question) return;
 
   statusEl.textContent = "Thinking...";
-  out.innerHTML = "";
+  out.innerHTML = `
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div style="width:12px; height:12px; border-radius:999px; background:var(--accent); box-shadow:0 0 12px var(--accent);"></div>
+      <div class="muted small">AIが回答を生成しています…</div>
+    </div>
+  `;
 
   try {
     const res = await fetch(ASK_ENDPOINT, {
@@ -263,29 +269,79 @@ async function askAi() {
 
     if (!res.ok) {
       statusEl.textContent = `Error: HTTP ${res.status}`;
-      out.innerHTML = `<pre>${escapeHtml(JSON.stringify(data, null, 2))}</pre>`;
+      out.innerHTML = `
+        <div style="font-weight:700; margin-bottom:8px; color:#ffb4b4;">エラー</div>
+        <pre style="white-space:pre-wrap; line-height:1.6;">${escapeHtml(JSON.stringify(data, null, 2))}</pre>
+      `;
       return;
     }
 
-    const cites = (data.citations || []).map(
-      (c) =>
-        `<li><a href="${c.url}" target="_blank" rel="noopener">${escapeHtml(c.title || c.url)}</a></li>`
-    ).join("");
+    const answer = escapeHtml(data.answer || "");
+    const citations = data.citations || [];
+    const matches = data.matches || [];
+
+    const citesHtml = citations.length
+      ? citations.map((c, i) => `
+          <li style="margin:6px 0;">
+            <a href="${c.url}" target="_blank" rel="noopener" style="text-decoration:none;">
+              ${escapeHtml(c.title || `参考元 ${i + 1}`)}
+            </a>
+          </li>
+        `).join("")
+      : `<li class="muted small">参考元なし</li>`;
+
+    const matchesHtml = matches.length
+      ? matches.map((m, i) => `
+          <div style="padding:10px 12px; border:1px solid rgba(255,255,255,.08); border-radius:12px; margin-top:8px;">
+            <div style="font-weight:700; margin-bottom:4px;">${i + 1}. ${escapeHtml(m.title || "(no title)")}</div>
+            <div class="muted small" style="margin-bottom:6px;">dist: ${escapeHtml(String(m.dist))}</div>
+            <div style="font-size:13px; line-height:1.7;">${escapeHtml(m.snippet || "")}</div>
+            <div style="margin-top:8px;">
+              <a href="${m.url}" target="_blank" rel="noopener">元コンテンツを開く</a>
+            </div>
+          </div>
+        `).join("")
+      : `<div class="muted small">根拠チャンクなし</div>`;
 
     out.innerHTML = `
-      <div style="font-weight:700; margin-bottom:8px;">回答</div>
-      <div style="white-space:pre-wrap; line-height:1.7;">${escapeHtml(data.answer || "")}</div>
-      <div style="margin-top:12px; font-weight:700;">参考元</div>
-      <ul>${cites}</ul>
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px; flex-wrap:wrap;">
+        <div>
+          <div style="font-weight:800; font-size:18px;">AI回答</div>
+          <div class="muted small">質問: ${escapeHtml(question)}</div>
+        </div>
+        <span class="chip">Ask AI</span>
+      </div>
+
+      <div style="padding:14px 16px; border:1px solid rgba(255,255,255,.08); border-radius:14px; background:rgba(255,255,255,.02);">
+        <div style="white-space:pre-wrap; line-height:1.9; font-size:15px;">${answer}</div>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div style="font-weight:700; margin-bottom:8px;">参考元</div>
+        <ul style="margin:0; padding-left:18px; line-height:1.8;">
+          ${citesHtml}
+        </ul>
+      </div>
+
+      <details style="margin-top:16px;">
+        <summary style="cursor:pointer; font-weight:700;">検索根拠を表示</summary>
+        <div style="margin-top:10px;">
+          ${matchesHtml}
+        </div>
+      </details>
     `;
 
     statusEl.textContent = "Done";
   } catch (e) {
     console.error(e);
     statusEl.textContent = "Network error";
-    out.innerHTML = `<pre>${escapeHtml(String(e))}</pre>`;
+    out.innerHTML = `
+      <div style="font-weight:700; margin-bottom:8px; color:#ffb4b4;">ネットワークエラー</div>
+      <pre style="white-space:pre-wrap; line-height:1.6;">${escapeHtml(String(e))}</pre>
+    `;
   }
 }
+
 
 (async function main() {
   const yearEl = $("#year");
