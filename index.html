@@ -12,7 +12,7 @@
   <meta property="og:description" content="Qiita記事とYouTube動画をまとめた技術ポータル。" />
   <meta property="og:type" content="website" />
 
-  <link rel="stylesheet" href="/styles.css?v=20260309a" />
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <header class="container header">
@@ -104,13 +104,12 @@
         </div>
       </div>
 
-      <!-- RAG検索（OCI /rag/search） -->
       <div class="tools" style="margin-top:10px;">
-        <input id="ragQuery" class="input" type="search" placeholder="RAG検索（例: Oracle AI Database 26ai の特徴）" />
-        <button id="ragBtn" class="btn" type="button">RAG Search</button>
+        <input id="askQuery" class="input" type="search" placeholder="AIに質問（例: Oracle AI Database 26ai の特徴は？）" />
+        <button id="askBtn" class="btn" type="button">Ask AI</button>
       </div>
-      <div id="ragStatus" class="muted small" style="margin-top:6px;"></div>
-      <div id="ragResults" class="grid" style="margin-top:10px;"></div>
+      <div id="askStatus" class="muted small" style="margin-top:6px;"></div>
+      <div id="askAnswer" class="card" style="margin-top:10px;"></div>
 
       <div class="category-bar">
         <button class="cat active" data-cat="all">All</button>
@@ -177,6 +176,6 @@
     </footer>
   </main>
 
-  <script src="/app.js?v=20260309a" defer></script>
+  <script src="./app.js"></script>
 </body>
 </html>
