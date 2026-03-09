@@ -190,3 +190,65 @@ function escapeHtml(s) {
     $("#posts-grid").innerHTML = `<div class="card muted">Qiita記事の取得に失敗しました。時間をおいて再読み込みしてください。</div>`;
   }
 })();
+
+
+
+// GitHub Pages の検索UIを /rag/search に接続
+<script>
+const RAG_ENDPOINT = "https://ma27s6tvglwhdaarmn6wp3zu6i.apigateway.us-chicago-1.oci.customer-oci.com/rag/search";
+
+async function ragSearch(){
+  const qEl = document.getElementById("ragQuery");
+  const statusEl = document.getElementById("ragStatus");
+  const out = document.getElementById("ragResults");
+
+  const q = (qEl.value || "").trim();
+  if(!q) return;
+
+  statusEl.textContent = "Searching...";
+  out.innerHTML = "";
+
+  try{
+    const res = await fetch(RAG_ENDPOINT, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ q, top: 8 })
+    });
+
+    if(!res.ok){
+      const text = await res.text();
+      statusEl.textContent = `Error: HTTP ${res.status}`;
+      out.innerHTML = `<pre style="white-space:pre-wrap; padding:12px; border:1px solid #f99; border-radius:10px;">${text}</pre>`;
+      return;
+    }
+
+    const data = await res.json();
+    const results = data.results || [];
+
+    statusEl.textContent = `Hits: ${results.length}`;
+    for(const r of results){
+      const card = document.createElement("div");
+      card.style.cssText = "margin:12px 0; padding:12px; border:1px solid #ddd; border-radius:12px;";
+      card.innerHTML = `
+        <div style="font-weight:700; margin-bottom:4px;">${escapeHtml(r.title || "")}</div>
+        <div style="font-size:12px; opacity:.7; margin-bottom:6px;">dist: ${r.dist}</div>
+        <div style="margin:6px 0;">${escapeHtml(r.snippet || "")}</div>
+        <a href="${r.url}" target="_blank" rel="noopener">Open</a>
+      `;
+      out.appendChild(card);
+    }
+  }catch(e){
+    statusEl.textContent = "Network error";
+    out.innerHTML = `<pre style="white-space:pre-wrap; padding:12px; border:1px solid #f99; border-radius:10px;">${String(e)}</pre>`;
+  }
+}
+
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+document.getElementById("ragBtn").addEventListener("click", ragSearch);
+document.getElementById("ragQuery").addEventListener("keydown", (e)=>{
+  if(e.key === "Enter") ragSearch();
+});
+</script></script>

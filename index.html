@@ -104,6 +104,18 @@
         </div>
       </div>
 
+<!-- 検索フォームを追加  -->
+      <div style="margin:16px 0; display:flex; gap:8px; align-items:center;">
+        <input id="ragQuery" type="text" placeholder="記事・動画を意味検索（例: 26ai の特徴）"
+              style="flex:1; padding:10px; border:1px solid #ccc; border-radius:10px;">
+        <button id="ragBtn" style="padding:10px 14px; border-radius:10px; border:1px solid #ccc; cursor:pointer;">
+          Search
+        </button>
+      </div>
+      <div id="ragStatus" style="font-size:12px; opacity:.7; margin:6px 0;"></div>
+      <div id="ragResults"></div>
+<!-- 検索フォームを追加ここまで  -->
+
       <div class="category-bar">
         <button class="cat active" data-cat="all">All</button>
         <button class="cat" data-cat="oci">OCI / Exadata</button>
