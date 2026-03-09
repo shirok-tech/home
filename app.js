@@ -191,16 +191,15 @@ function escapeHtml(s) {
   }
 })();
 
-
-
-// GitHub Pages の検索UIを /rag/search に接続
-<script>
+// RAG検索（API Gateway）
 const RAG_ENDPOINT = "https://ma27s6tvglwhdaarmn6wp3zu6i.apigateway.us-chicago-1.oci.customer-oci.com/rag/search";
 
 async function ragSearch(){
   const qEl = document.getElementById("ragQuery");
   const statusEl = document.getElementById("ragStatus");
   const out = document.getElementById("ragResults");
+
+  if (!qEl || !statusEl || !out) return; // ページによって要素が無い場合の保険
 
   const q = (qEl.value || "").trim();
   if(!q) return;
@@ -226,6 +225,8 @@ async function ragSearch(){
     const results = data.results || [];
 
     statusEl.textContent = `Hits: ${results.length}`;
+
+    // 既存の escapeHtml()（app.js内に既にある）を使う
     for(const r of results){
       const card = document.createElement("div");
       card.style.cssText = "margin:12px 0; padding:12px; border:1px solid #ddd; border-radius:12px;";
@@ -243,12 +244,9 @@ async function ragSearch(){
   }
 }
 
-function escapeHtml(s){
-  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
+// イベント登録（要素が存在する場合のみ）
+const ragBtn = document.getElementById("ragBtn");
+const ragQuery = document.getElementById("ragQuery");
 
-document.getElementById("ragBtn").addEventListener("click", ragSearch);
-document.getElementById("ragQuery").addEventListener("keydown", (e)=>{
-  if(e.key === "Enter") ragSearch();
-});
-</script></script>
+if (ragBtn) ragBtn.addEventListener("click", ragSearch);
+if (ragQuery) ragQuery.addEventListener("keydown", (e)=>{ if(e.key === "Enter") ragSearch(); });
